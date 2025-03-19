@@ -35,9 +35,75 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.amberAccent,
+      backgroundColor: Colors.amberAccent[100],
       bottomNavigationBar: MyBottomNavBar(
         onTabChange: (index) => navigateBottomBar(index),
+      ),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: Builder(
+          builder:
+              (context) => IconButton(
+                icon: const Padding(
+                  padding: EdgeInsets.only(left: 12.0),
+                  child: Icon(Icons.menu, color: Colors.black),
+                ),
+                onPressed: () {
+                  Scaffold.of(context).openDrawer();
+                },
+              ),
+        ),
+      ),
+      drawer: Drawer(
+        backgroundColor: Colors.amber,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Column(
+              children: [
+                // logo
+                Padding(
+                  padding: const EdgeInsets.only(top: 25.0),
+                  child: DrawerHeader(
+                    child: Image.asset(
+                      'lib/images/sv-logo.png',
+                      color: Colors.black,
+                    ),
+                  ),
+                ),
+
+                // other pages
+                const Padding(
+                  padding: EdgeInsets.only(left: 25.0, top: 25.0),
+                  child: ListTile(
+                    leading: Icon(Icons.home, color: Colors.black),
+                    title: Text(
+                      'Início',
+                      style: TextStyle(color: Colors.black),
+                    ),
+                  ),
+                ),
+
+                const Padding(
+                  padding: EdgeInsets.only(left: 25.0),
+                  child: ListTile(
+                    leading: Icon(Icons.info, color: Colors.black),
+                    title: Text('Sobre', style: TextStyle(color: Colors.black)),
+                  ),
+                ),
+              ],
+            ),
+
+            const Padding(
+              padding: EdgeInsets.only(left: 25.0, bottom: 25.0),
+              child: ListTile(
+                leading: Icon(Icons.logout, color: Colors.black),
+                title: Text('Sair', style: TextStyle(color: Colors.black)),
+              ),
+            ),
+          ],
+        ),
       ),
       body: _pages[_selectedIndex],
     );
