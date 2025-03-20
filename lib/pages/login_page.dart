@@ -46,12 +46,47 @@ class _LoginPageState extends State<LoginPage> {
                 SizedBox(height: 50),
 
                 // Sensorville App
-                Text(
-                  'Sensorville App',
-                  style: GoogleFonts.bebasNeue(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 48,
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Sensorville ',
+                      style: GoogleFonts.bebasNeue(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 48,
+                      ),
+                    ),
+                    Text(
+                      'App',
+                      style: GoogleFonts.bebasNeue(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 48,
+                        color: Colors.amber,
+                        shadows: <Shadow>[
+                          Shadow(
+                            offset: Offset(1.0, 1.0),
+                            blurRadius: 3.0,
+                            color: Colors.black,
+                          ),
+                          Shadow(
+                            offset: Offset(1.0, -1.0),
+                            blurRadius: 3.0,
+                            color: Colors.black,
+                          ),
+                          Shadow(
+                            offset: Offset(-1.0, 1.0),
+                            blurRadius: 3.0,
+                            color: Colors.black,
+                          ),
+                          Shadow(
+                            offset: Offset(-1.0, -1.0),
+                            blurRadius: 3.0,
+                            color: Colors.black,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
 
                 SizedBox(height: 50),
