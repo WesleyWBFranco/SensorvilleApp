@@ -28,7 +28,7 @@ class _CartItemState extends State<CartItem> {
       child: ListTile(
         leading: Image.asset(widget.food.imagePath),
         title: Text(widget.food.name),
-        subtitle: Text(widget.food.price),
+        subtitle: Text('R\$ ${widget.food.price.toStringAsFixed(2)}'),
         trailing: IconButton(
           icon: Icon(Icons.delete),
           onPressed: removeItemFromCart,

@@ -1,61 +1,70 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-
 import 'food.dart';
 
 class Cart extends ChangeNotifier {
-  // list of foods for sale
-  List<Food> foodShop = [
-    Food(
-      name: 'Coca-Cola Original 350ml',
-      price: '3,99',
-      description: 'Lata 350ml',
-      imagePath: 'lib/images/coca-lata.png',
-    ),
+  final CollectionReference foodCollection =
+      FirebaseFirestore.instance.collection('foods');
 
-    Food(
-      name: 'Chocolate Bis Branco',
-      price: '6,99',
-      description: 'Caixa de chocolate Bis branco',
-      imagePath: 'lib/images/bis-branco.png',
-    ),
-
-    Food(
-      name: 'Chocolate Choco Amendoim Trento Allegro 35g',
-      price: '2,49',
-      description: 'Embalagem 35g',
-      imagePath: 'lib/images/trento-allegro.png',
-    ),
-
-    Food(
-      name: 'Chocolate Avelã Choco Branco Trento 32g',
-      price: '1,99',
-      description: 'Embalagem 32g',
-      imagePath: 'lib/images/trento-avela-choco-branco.png',
-    ),
-  ];
-
-  // list of items in user cart
+  List<Food> foodShop = [];
   List<Food> userCart = [];
 
-  // get list of foods for sale
-  List<Food> getFoodList() {
+  Future<List<Food>> getFoodList() async {
+    final snapshot = await foodCollection.get();
+    foodShop = snapshot.docs.map((doc) {
+      final data = doc.data() as Map<String, dynamic>?; // Cast para Map<String, dynamic>?
+      if (data != null) {
+        try {
+          return Food.fromMap(data);
+        } catch (e) {
+          print('Erro ao converter documento para Food: $e');
+          // Retorna um Food padrão ou lança uma exceção, dependendo do que você preferir
+          return Food(
+            name: 'Erro',
+            price: 0.0,
+            imagePath: 'erro',
+            description: 'Erro',
+            quantity: 0,
+            category: 'Erro',
+            addedDate: DateTime.now(),
+            expiryDate: DateTime.now(),
+          ); // Ou lance uma exceção aqui
+        }
+      } else {
+        print('Documento com dados nulos: ${doc.id}');
+        // Retorna um Food padrão ou lança uma exceção
+        return Food(
+          name: 'Erro',
+          price: 0.0,
+          imagePath: 'erro',
+          description: 'Erro',
+          quantity: 0,
+          category: 'Erro',
+          addedDate: DateTime.now(),
+          expiryDate: DateTime.now(),
+        ); // Ou lance uma exceção aqui
+      }
+    }).toList();
+    notifyListeners();
     return foodShop;
   }
 
-  // get cart
   List<Food> getUserCart() {
     return userCart;
   }
 
-  // add items to cart
   void addItemToCart(Food food) {
     userCart.add(food);
     notifyListeners();
   }
 
-  // remove items from cart
   void removeItemFromCart(Food food) {
     userCart.remove(food);
+    notifyListeners();
+  }
+
+  Future<void> addFoodToFirestore(Food food) async {
+    await foodCollection.add(food.toMap());
     notifyListeners();
   }
 }

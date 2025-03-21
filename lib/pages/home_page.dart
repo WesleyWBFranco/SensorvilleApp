@@ -1,8 +1,10 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../components/bottom_nav_bar.dart';
 import 'cart_page.dart';
 import 'shop_page.dart';
+import 'admin_shop_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -17,6 +19,36 @@ class _HomePageState extends State<HomePage> {
 
   // this selected index is to control the bottom nav bar
   int _selectedIndex = 0;
+  bool _isAdmin = false; // Adiciona a variável de estado isAdmin
+
+  @override
+  void initState() {
+    super.initState();
+    _checkUserRole();
+  }
+
+  Future<void> _checkUserRole() async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      DocumentSnapshot userDoc =
+          await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+
+      if (userDoc.exists) {
+        Map<String, dynamic>? data = userDoc.data() as Map<String, dynamic>?;
+        if (data != null && data['role'] == 'admin') {
+          setState(() {
+            _pages.add(const AdminShopPage());
+            _isAdmin = true; // Define isAdmin como verdadeiro
+          });
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Bem-vindo, administrador!')));
+        } else {
+          print("Usuário não é admin ou campo 'role' não encontrado.");
+        }
+      } else {
+        print("Documento do usuário não encontrado.");
+      }
+    }
+  }
 
   // this method will update our selected index
   // when the user taps on the bottom bar
@@ -41,7 +73,9 @@ class _HomePageState extends State<HomePage> {
       backgroundColor: Colors.grey[200],
       bottomNavigationBar: MyBottomNavBar(
         onTabChange: (index) => navigateBottomBar(index),
+        isAdmin: _isAdmin, // Passa a variável isAdmin
       ),
+
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,

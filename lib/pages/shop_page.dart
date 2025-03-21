@@ -88,19 +88,30 @@ class _ShopPageState extends State<ShopPage> {
 
               // list of foods for sale
               Expanded(
-                child: ListView.builder(
-                  itemCount: value.getFoodList().length,
-                  scrollDirection: Axis.horizontal,
-                  cacheExtent: 200,
-                  itemBuilder: (context, index) {
-                    // create a food from shop list
-                    Food food = value.getFoodList()[index];
-
-                    // return the food
-                    return FoodTile(
-                      food: food,
-                      onTap: () => addFoodToCart(food),
-                    );
+                child: FutureBuilder<List<Food>>(
+                  future: value.getFoodList(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return Center(child: CircularProgressIndicator());
+                    } else if (snapshot.hasError) {
+                      return Center(child: Text('Erro: ${snapshot.error}'));
+                    } else if (snapshot.hasData) {
+                      final foodList = snapshot.data!;
+                      return ListView.builder(
+                        itemCount: foodList.length,
+                        scrollDirection: Axis.horizontal,
+                        cacheExtent: 200,
+                        itemBuilder: (context, index) {
+                          Food food = foodList[index];
+                          return FoodTile(
+                            food: food,
+                            onTap: () => addFoodToCart(food),
+                          );
+                        },
+                      );
+                    } else {
+                      return Center(child: Text('Nenhum dado disponível.'));
+                    }
                   },
                 ),
               ),

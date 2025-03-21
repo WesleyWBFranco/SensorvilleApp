@@ -3,7 +3,13 @@ import 'package:google_nav_bar/google_nav_bar.dart';
 
 class MyBottomNavBar extends StatelessWidget {
   void Function(int)? onTabChange;
-  MyBottomNavBar({super.key, required this.onTabChange});
+  bool isAdmin; // Adiciona a variável isAdmin
+
+  MyBottomNavBar({
+    super.key,
+    required this.onTabChange,
+    this.isAdmin = false,
+  }); // Atualiza o construtor
 
   @override
   Widget build(BuildContext context) {
@@ -18,9 +24,11 @@ class MyBottomNavBar extends StatelessWidget {
         tabBorderRadius: 16,
         gap: 8,
         onTabChange: (value) => onTabChange!(value),
-        tabs: const [
+        tabs: [
           GButton(icon: Icons.home, text: 'Shop'),
           GButton(icon: Icons.shopping_bag_rounded, text: 'Cart'),
+          if (isAdmin) // Verifica a variável isAdmin
+            GButton(icon: Icons.add, text: 'Gerenciar'),
         ],
       ),
     );
