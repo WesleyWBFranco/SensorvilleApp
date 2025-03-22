@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import '../models/food.dart';
 
@@ -19,10 +20,11 @@ class FoodTile extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           // food pic
-          Image.asset(
-            food.imagePath,
-            cacheWidth: 280, // Ajuste conforme necessário
-          ),
+          food.imagePath.startsWith(
+                '/',
+              ) // Verifica se é um caminho de arquivo local
+              ? Image.file(File(food.imagePath), cacheWidth: 280)
+              : Image.asset(food.imagePath, cacheWidth: 280),
 
           // description
           Padding(

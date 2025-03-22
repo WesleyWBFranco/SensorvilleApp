@@ -41,6 +41,8 @@ dependencies:
   firebase_auth: ^5.5.1
   firebase_messaging: ^15.2.4
   google_fonts:
+  image_picker: ^0.8.4+11
+  uuid: ^4.5.1
 
 dev_dependencies:
   flutter_test:

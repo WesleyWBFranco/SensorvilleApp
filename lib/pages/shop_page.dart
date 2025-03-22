@@ -12,6 +12,18 @@ class ShopPage extends StatefulWidget {
 }
 
 class _ShopPageState extends State<ShopPage> {
+  late Future<List<Food>> _foodListFuture; // Adicione esta linha
+
+  @override
+  void initState() {
+    super.initState();
+    _foodListFuture =
+        Provider.of<Cart>(
+          context,
+          listen: false,
+        ).getFoodList(); // Adicione esta linha
+  }
+
   // add food to cart
   void addFoodToCart(Food food) {
     Provider.of<Cart>(context, listen: false).addItemToCart(food);
@@ -67,7 +79,7 @@ class _ShopPageState extends State<ShopPage> {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     const Text(
-                      'Promoções 🔥',
+                      'Promoções ',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 24,
@@ -89,14 +101,17 @@ class _ShopPageState extends State<ShopPage> {
               // list of foods for sale
               Expanded(
                 child: FutureBuilder<List<Food>>(
-                  future: value.getFoodList(),
+                  future: _foodListFuture, // Use _foodListFuture aqui
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
+                      print('Carregando dados...');
                       return Center(child: CircularProgressIndicator());
                     } else if (snapshot.hasError) {
+                      print('Erro ao carregar dados: ${snapshot.error}');
                       return Center(child: Text('Erro: ${snapshot.error}'));
                     } else if (snapshot.hasData) {
                       final foodList = snapshot.data!;
+                      print('Dados carregados: ${foodList.length} itens');
                       return ListView.builder(
                         itemCount: foodList.length,
                         scrollDirection: Axis.horizontal,
@@ -110,6 +125,7 @@ class _ShopPageState extends State<ShopPage> {
                         },
                       );
                     } else {
+                      print('Nenhum dado disponível.');
                       return Center(child: Text('Nenhum dado disponível.'));
                     }
                   },
