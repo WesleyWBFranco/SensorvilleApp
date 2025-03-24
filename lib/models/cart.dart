@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:uuid/uuid.dart'; // Importe o pacote uuid
+import 'package:uuid/uuid.dart';
 import 'food.dart';
 
 class Cart extends ChangeNotifier {
@@ -23,17 +23,14 @@ class Cart extends ChangeNotifier {
                 print(
                   'getFoodList: Convertendo documento ${doc.id} para Food...',
                 );
-                // Adicione a verificação para o campo 'id'
-                final id =
-                    data['id'] ??
-                    doc.id; // Tenta usar 'id' do Firestore, senão usa doc.id
+                final id = data['id'] ?? doc.id;
                 return Food.fromMap(data, id);
               } catch (e) {
                 print(
                   'getFoodList: Erro ao converter documento ${doc.id} para Food: $e',
                 );
                 return Food(
-                  id: const Uuid().v4(), // Gera um UUID em caso de erro
+                  id: const Uuid().v4(),
                   name: 'Erro',
                   price: 0.0,
                   imagePath: 'erro',
@@ -47,7 +44,7 @@ class Cart extends ChangeNotifier {
             } else {
               print('getFoodList: Documento ${doc.id} com dados nulos.');
               return Food(
-                id: const Uuid().v4(), // Gera um UUID em caso de erro
+                id: const Uuid().v4(),
                 name: 'Erro',
                 price: 0.0,
                 imagePath: 'erro',
@@ -64,7 +61,7 @@ class Cart extends ChangeNotifier {
       return foodShop;
     } catch (e) {
       print('getFoodList: Erro na consulta ao Firestore: $e');
-      return []; // Retorna uma lista vazia em caso de erro
+      return [];
     }
   }
 
@@ -74,10 +71,13 @@ class Cart extends ChangeNotifier {
 
   void addItemToCart(Food food) {
     if (_userCart.containsKey(food.id)) {
-      _userCart.update(
-        food.id,
-        (value) => {'food': food, 'quantity': (value['quantity'] as int) + 1},
-      );
+      final currentQuantity = _userCart[food.id]?['quantity'] as int? ?? 0;
+      if (currentQuantity < food.quantity) {
+        _userCart.update(
+          food.id,
+          (value) => {'food': food, 'quantity': currentQuantity + 1},
+        );
+      }
     } else {
       _userCart[food.id] = {'food': food, 'quantity': 1};
     }
@@ -86,13 +86,10 @@ class Cart extends ChangeNotifier {
 
   void removeItemFromCart(Food food) {
     if (_userCart.containsKey(food.id)) {
-      final item = _userCart[food.id]; // Armazena o item em uma variável local
+      final item = _userCart[food.id];
       if (item != null) {
-        // Verifica se item não é nulo
-        final quantity =
-            item['quantity'] as int?; // Obtém a quantidade, permitindo nulo
+        final quantity = item['quantity'] as int?;
         if (quantity != null && quantity > 1) {
-          // Verifica se a quantidade não é nula e é maior que 1
           _userCart.update(
             food.id,
             (value) => {'food': food, 'quantity': quantity - 1},
@@ -107,6 +104,12 @@ class Cart extends ChangeNotifier {
 
   Future<void> addFoodToFirestore(Food food) async {
     await foodCollection.add(food.toMap());
+    notifyListeners();
+  }
+
+  // Adicione a função clearCart aqui
+  void clearCart() {
+    _userCart.clear();
     notifyListeners();
   }
 }
