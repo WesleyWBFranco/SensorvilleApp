@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:lottie/lottie.dart';
 import 'package:provider/provider.dart';
 import '../components/cart_item.dart';
 import '../models/cart.dart';
@@ -19,31 +21,84 @@ class CartPage extends StatelessWidget {
         }
 
         return Scaffold(
-          appBar: AppBar(title: Text('Meu Carrinho')),
-          body: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 25.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: value.getUserCart().length,
-                    itemBuilder: (context, index) {
-                      return CartItem(item: value.getUserCart()[index]);
-                    },
+          backgroundColor: Colors.grey[200],
+          body:
+              value.getUserCart().isEmpty
+                  ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.remove_shopping_cart,
+                          color: Colors.amber,
+                        ),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'Seu carrinho está vazio!',
+                          style: TextStyle(fontSize: 18, color: Colors.amber),
+                        ),
+                      ],
+                    ),
+                  )
+                  : Column(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 160,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(5),
+                        ),
+                        child: Lottie.asset("assets/animations/cart.json"),
+                      ),
+
+                      const Padding(
+                        padding: EdgeInsets.only(
+                          top: 10,
+                          left: 25,
+                          right: 25,
+                          bottom: 10,
+                        ),
+                        child: Divider(color: Colors.white),
+                      ),
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 25.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: ListView.builder(
+                                  itemCount: value.getUserCart().length,
+                                  itemBuilder: (context, index) {
+                                    return CartItem(
+                                      item: value.getUserCart()[index],
+                                    );
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const Padding(
+                        padding: EdgeInsets.only(top: 25, left: 25, right: 25),
+                        child: Divider(color: Colors.white),
+                      ),
+                    ],
                   ),
-                ),
-              ],
-            ),
-          ),
           floatingActionButton:
               value.getUserCart().isNotEmpty
                   ? FloatingActionButton.extended(
+                    backgroundColor: Colors.amber,
                     onPressed: () {
                       _showConfirmationDialog(context, value, total);
                     },
                     label: Text(
-                      'Confirmar pedido (R\$ ${total.toStringAsFixed(2)})',
+                      'Confirmar Compra (R\$ ${total.toStringAsFixed(2)})',
+                      style: TextStyle(color: Colors.white),
                     ),
                   )
                   : null,
@@ -55,15 +110,56 @@ class CartPage extends StatelessWidget {
   void _showConfirmationDialog(BuildContext context, Cart cart, double total) {
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (context) {
         return AlertDialog(
-          title: Text('Confirmar Pedido'),
+          backgroundColor: Colors.grey[200],
+          title: Text('Confirmar Compra'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Tem certeza que deseja efetuar o pedido?'),
-              SizedBox(height: 10),
-              Text('Valor Total: R\$ ${total.toStringAsFixed(2)}'),
+              Text(
+                'Tem certeza que deseja efetuar a compra?',
+                style: TextStyle(fontSize: 14),
+              ),
+              SizedBox(height: 12),
+              Text(
+                'Valor Total: R\$ ${total.toStringAsFixed(2)}',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 60),
+              Text('Chave Pix para pagamento:', style: TextStyle(fontSize: 16)),
+              SizedBox(height: 5),
+              Container(
+                padding: EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                  borderRadius: BorderRadius.circular(5),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'teste@gmail.com',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.copy, color: Colors.amber),
+                      onPressed: () {
+                        Clipboard.setData(
+                          ClipboardData(text: "teste@gmail.com"),
+                        );
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Chave Pix copiada!')),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
           actions: [
@@ -71,14 +167,18 @@ class CartPage extends StatelessWidget {
               onPressed: () {
                 Navigator.pop(context);
               },
-              child: Text('Não'),
+              child: Text('Cancelar', style: TextStyle(color: Colors.amber)),
             ),
             ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.amber),
               onPressed: () {
                 _confirmOrder(context, cart, total);
                 Navigator.pop(context);
               },
-              child: Text('Sim'),
+              child: Text(
+                'Confirmar Compra',
+                style: TextStyle(color: Colors.white),
+              ),
             ),
           ],
         );
@@ -104,41 +204,43 @@ class CartPage extends StatelessWidget {
 
       bool allItemsExist = true;
 
-      // Atualizar estoque e registrar pedido
       for (var item in userCart) {
         final food = item['food'] as Food;
         final quantity = item['quantity'] as int;
+        final foodId = item['id'];
+
         final foodDocRef = FirebaseFirestore.instance
             .collection('foods')
-            .doc(food.id);
+            .doc(foodId);
         final foodDoc = await foodDocRef.get();
 
         if (foodDoc.exists) {
-          print("✅ Documento ${food.id} encontrado. Atualizando estoque...");
+          print("✅ Documento $foodId encontrado. Atualizando estoque...");
           batch.update(foodDocRef, {
             'quantity': foodDoc['quantity'] - quantity,
           });
         } else {
-          print("❌ Documento ${food.id} não encontrado no Firestore!");
+          print("❌ Documento $foodId não encontrado no Firestore!");
           allItemsExist = false;
         }
       }
 
       if (!allItemsExist) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          // Use o contexto diretamente
-          SnackBar(
-            content: Text(
-              'Erro: Alguns itens do pedido não estão disponíveis.',
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Erro: Alguns itens do pedido não estão disponíveis.',
+              ),
             ),
-          ),
-        );
+          );
+        }
         return;
       }
 
-      // Registrar o pedido
       final pedidoDocRef = pedidosCollection.doc();
       batch.set(pedidoDocRef, {
+        'userId': user.uid,
         'nome': userName,
         'data': DateTime.now(),
         'itens':
@@ -156,19 +258,21 @@ class CartPage extends StatelessWidget {
 
       await batch.commit();
 
-      // Limpar o carrinho
       cart.clearCart();
 
-      // Exibir mensagem de sucesso
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Pedido confirmado com sucesso!')),
-      ); // Use o contexto diretamente
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Pedido confirmado com sucesso!')),
+        );
+      }
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Usuário não logado. Faça login para continuar.'),
-        ),
-      ); // Use o contexto diretamente
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Usuário não logado. Faça login para continuar.'),
+          ),
+        );
+      }
     }
   }
 }

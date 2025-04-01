@@ -10,78 +10,81 @@ class FoodTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(left: 25),
-      width: 280,
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(10),
       ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Stack(
         children: [
-          // food pic
-          food.imagePath.startsWith(
-                '/',
-              ) // Verifica se é um caminho de arquivo local
-              ? Image.file(File(food.imagePath), cacheWidth: 280)
-              : Image.asset(food.imagePath, cacheWidth: 280),
-
-          // description
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 25.0),
-            child: Text(
-              food.description,
-              style: TextStyle(color: Colors.grey[600]),
-            ),
-          ),
-
-          // price + details
-          Padding(
-            padding: const EdgeInsets.only(left: 25.0),
-            child: Row(
+            padding: const EdgeInsets.all(8.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.only(right: 1),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // food name
-                        Text(
-                          food.name,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
-                          ),
-                        ),
-
-                        // price
-                        Text(
-                          'R\$ ${food.price}',
-                          style: const TextStyle(color: Colors.grey),
-                        ),
-                      ],
-                    ),
+                  child: Center(
+                    child:
+                        food.imagePath.startsWith('http://') ||
+                                food.imagePath.startsWith('https://')
+                            ? Image.network(
+                              food.imagePath,
+                              cacheWidth: 280,
+                              fit: BoxFit.contain,
+                              errorBuilder: (context, error, stackTrace) {
+                                return const Icon(Icons.image_not_supported);
+                              },
+                            )
+                            : food.imagePath.startsWith('/')
+                            ? Image.file(
+                              File(food.imagePath),
+                              cacheWidth: 280,
+                              fit: BoxFit.contain,
+                            )
+                            : Image.asset(
+                              food.imagePath,
+                              cacheWidth: 280,
+                              fit: BoxFit.contain,
+                            ),
                   ),
                 ),
 
-                // plus button
-                GestureDetector(
-                  onTap: onTap,
-                  child: Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: const BoxDecoration(
-                      color: Colors.amber,
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(12),
-                        bottomRight: Radius.circular(12),
-                      ),
-                    ),
-                    child: const Icon(Icons.add, color: Colors.white),
+                Text(
+                  food.name,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+
+                Padding(
+                  padding: const EdgeInsets.only(top: 7.0),
+                  child: Text(
+                    'R\$ ${food.price}',
+                    style: const TextStyle(color: Colors.black),
                   ),
                 ),
               ],
+            ),
+          ),
+          Positioned(
+            bottom: 2,
+            right: 2,
+            child: GestureDetector(
+              onTap: onTap,
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: const BoxDecoration(
+                  color: Colors.amber,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(8),
+                    bottomRight: Radius.circular(8),
+                  ),
+                ),
+                child: const Icon(Icons.add, color: Colors.white, size: 16),
+              ),
             ),
           ),
         ],
