@@ -1,11 +1,12 @@
+import 'dart:io';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:path_provider/path_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/cart.dart';
 import '../models/food.dart';
 import '../components/add_food_dialog.dart';
-import 'package:pdf/widgets.dart' as pw;
-import 'package:path_provider/path_provider.dart';
-import 'dart:io';
 import 'package:intl/intl.dart';
 
 class AdminShopPage extends StatefulWidget {
@@ -30,76 +31,6 @@ class _AdminShopPageState extends State<AdminShopPage> {
         Provider.of<Cart>(context, listen: false).getFoodListAsStream();
     _loadExistingCategories();
     _loadReferenceStockLevels();
-  }
-
-  Future<void> _generatePdfReport() async {
-    final pdf = pw.Document();
-
-    final snapshot =
-        await _foodStream?.first; // Obtém o primeiro valor da stream
-
-    if (snapshot != null && snapshot.isNotEmpty) {
-      pdf.addPage(
-        pw.MultiPage(
-          build:
-              (pw.Context context) => [
-                pw.Table(
-                  border: pw.TableBorder.all(),
-                  columnWidths: {
-                    0: const pw.FixedColumnWidth(150),
-                    1: const pw.FixedColumnWidth(80),
-                    2: const pw.FixedColumnWidth(80),
-                  },
-                  children: [
-                    pw.TableRow(
-                      children: [
-                        pw.Text(
-                          'Nome',
-                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
-                        ),
-                        pw.Text(
-                          'Valor',
-                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
-                        ),
-                        pw.Text(
-                          'Estoque',
-                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
-                        ),
-                      ],
-                    ),
-                    for (var item in snapshot)
-                      pw.TableRow(
-                        children: [
-                          pw.Text((item['food'] as Food).name),
-                          pw.Text(
-                            'R\$ ${(item['food'] as Food).price.toStringAsFixed(2)}',
-                          ),
-                          pw.Text('${(item['food'] as Food).quantity}'),
-                        ],
-                      ),
-                  ],
-                ),
-              ],
-        ),
-      );
-
-      // Salvar o PDF
-      final directory = await getApplicationDocumentsDirectory();
-      final file = File('${directory.path}/relatorio_estoque.pdf');
-      await file.writeAsBytes(await pdf.save());
-
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Relatório PDF gerado em: ${file.path}')),
-        );
-      }
-    } else {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Nenhum item para gerar relatório.')),
-        );
-      }
-    }
   }
 
   Future<void> _loadReferenceStockLevels() async {
@@ -204,6 +135,253 @@ class _AdminShopPageState extends State<AdminShopPage> {
     });
   }
 
+  bool _isCloseToExpire(DateTime? expiryDate) {
+    if (expiryDate == null) {
+      return false;
+    }
+    final now = DateTime.now();
+    final difference = expiryDate.difference(now);
+    return difference.inDays < 60 && difference.inDays >= 0;
+  }
+
+  Future<void> _generateStockPdfReport() async {
+    final pdf = pw.Document();
+    final snapshot =
+        await Provider.of<Cart>(context, listen: false).foodCollection.get();
+
+    if (snapshot.docs.isNotEmpty) {
+      pdf.addPage(
+        pw.MultiPage(
+          build:
+              (pw.Context context) => [
+                pw.Header(
+                  level: 0,
+                  child: pw.Text(
+                    'Relatório de Estoque',
+                    style: pw.TextStyle(
+                      fontWeight: pw.FontWeight.bold,
+                      fontSize: 20,
+                    ),
+                  ),
+                ),
+                pw.SizedBox(height: 10),
+                pw.Text(
+                  'Gerado no dia ${DateFormat('dd/MM/yyyy').format(DateTime.now())} ',
+                  style: const pw.TextStyle(fontSize: 14),
+                ),
+                pw.SizedBox(height: 20),
+                pw.Table(
+                  border: pw.TableBorder.all(),
+                  columnWidths: {
+                    0: const pw.FixedColumnWidth(120),
+                    1: const pw.FixedColumnWidth(60),
+                    2: const pw.FixedColumnWidth(60),
+                    3: const pw.FixedColumnWidth(80),
+                  },
+                  children: [
+                    pw.TableRow(
+                      children: [
+                        pw.Text(
+                          'Nome',
+                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                        ),
+                        pw.Text(
+                          'Preço',
+                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                        ),
+                        pw.Text(
+                          'Estoque',
+                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                        ),
+                        pw.Text(
+                          'Validade',
+                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                    ...snapshot.docs.map((doc) {
+                      final data = doc.data() as Map<String, dynamic>;
+                      final food = Food.fromJson(data);
+                      return pw.TableRow(
+                        children: [
+                          pw.Text(food.name ?? ''),
+                          pw.Text(
+                            'R\$ ${food.price?.toStringAsFixed(2) ?? '0.00'}',
+                          ),
+                          pw.Text('${food.quantity ?? 0}'),
+                          pw.Text(
+                            food.expiryDate != null
+                                ? DateFormat(
+                                  'dd/MM/yyyy',
+                                ).format(food.expiryDate!.toLocal())
+                                : 'N/A',
+                          ),
+                        ],
+                      );
+                    }).toList(),
+                  ],
+                ),
+              ],
+        ),
+      );
+
+      try {
+        final externalDir = await getExternalStorageDirectory();
+        final file = File(
+          '${externalDir?.path}/relatorio_estoque_${DateFormat('yyyyMMdd_HHmmss').format(DateTime.now())}.pdf',
+        );
+        await file.writeAsBytes(await pdf.save());
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Relatório de estoque gerado em: ${file.path}'),
+            ),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Erro ao gerar relatório de estoque: $e')),
+          );
+        }
+      }
+    } else {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Nenhum item no estoque para gerar relatório.'),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _generateSalesPdfReport(
+    DateTime startDate,
+    DateTime endDate,
+  ) async {
+    final pdf = pw.Document();
+    final startTimestamp = Timestamp.fromDate(startDate);
+    final endTimestamp = Timestamp.fromDate(
+      endDate.add(const Duration(days: 1)).subtract(const Duration(seconds: 1)),
+    ); // Inclui o dia final até o último segundo
+
+    final ordersSnapshot =
+        await Provider.of<Cart>(context, listen: false).orderCollection
+            .where('data', isGreaterThanOrEqualTo: startTimestamp)
+            .where('data', isLessThanOrEqualTo: endTimestamp)
+            .get();
+
+    if (ordersSnapshot.docs.isNotEmpty) {
+      Map<String, int> salesData = {};
+      for (var orderDoc in ordersSnapshot.docs) {
+        final orderData = orderDoc.data() as Map<String, dynamic>;
+        final items = orderData['itens'] as List<dynamic>?;
+        if (items != null) {
+          for (var item in items) {
+            final foodName = item['nome'] as String?;
+            final quantity = item['quantidade'] as int?;
+            if (foodName != null && quantity != null) {
+              salesData[foodName] = (salesData[foodName] ?? 0) + quantity;
+            }
+          }
+        }
+      }
+
+      if (salesData.isNotEmpty) {
+        pdf.addPage(
+          pw.MultiPage(
+            build:
+                (pw.Context context) => [
+                  pw.Header(
+                    level: 0,
+                    child: pw.Text(
+                      'Relatório de Vendas',
+                      style: pw.TextStyle(
+                        fontWeight: pw.FontWeight.bold,
+                        fontSize: 20,
+                      ),
+                    ),
+                  ),
+                  pw.SizedBox(height: 10),
+                  pw.Text(
+                    'Referente ao período entre ${DateFormat('dd/MM/yyyy').format(startDate)} e ${DateFormat('dd/MM/yyyy').format(endDate)}',
+                    style: const pw.TextStyle(fontSize: 14),
+                  ),
+                  pw.SizedBox(height: 20),
+                  pw.Table(
+                    border: pw.TableBorder.all(),
+                    columnWidths: {
+                      0: const pw.FixedColumnWidth(150),
+                      1: const pw.FixedColumnWidth(80),
+                    },
+                    children: [
+                      pw.TableRow(
+                        children: [
+                          pw.Text(
+                            'Produto',
+                            style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                          ),
+                          pw.Text(
+                            'Total Vendido',
+                            style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                      ...salesData.entries.map((entry) {
+                        return pw.TableRow(
+                          children: [
+                            pw.Text(entry.key),
+                            pw.Text('${entry.value}'),
+                          ],
+                        );
+                      }).toList(),
+                    ],
+                  ),
+                ],
+          ),
+        );
+
+        try {
+          final externalDir = await getExternalStorageDirectory();
+          final file = File(
+            '${externalDir?.path}/relatorio_vendas_${DateFormat('yyyyMMdd_HHmmss').format(DateTime.now())}.pdf',
+          );
+          await file.writeAsBytes(await pdf.save());
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Relatório de vendas gerado em: ${file.path}'),
+              ),
+            );
+          }
+        } catch (e) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Erro ao gerar relatório de vendas: $e')),
+            );
+          }
+        }
+      } else {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Nenhuma venda registrada no período selecionado.'),
+            ),
+          );
+        }
+      }
+    } else {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Nenhum pedido encontrado no período selecionado.'),
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -220,7 +398,7 @@ class _AdminShopPageState extends State<AdminShopPage> {
               },
               decoration: InputDecoration(
                 hintText: 'Pesquisar por nome, preço ou estoque',
-                hintStyle: TextStyle(color: Colors.grey[400]),
+                hintStyle: TextStyle(color: Colors.grey[500]),
                 prefixIcon: const Icon(Icons.search, color: Colors.grey),
                 enabledBorder: OutlineInputBorder(
                   borderSide: BorderSide(
@@ -250,6 +428,7 @@ class _AdminShopPageState extends State<AdminShopPage> {
                 } else if (snapshot.hasError) {
                   return Center(child: Text('Erro: ${snapshot.error}'));
                 } else if (snapshot.hasData) {
+                  print('Dados do Stream: ${snapshot.data}');
                   final filteredFoods =
                       snapshot.data!.where((item) {
                         final food = item['food'] as Food;
@@ -263,10 +442,8 @@ class _AdminShopPageState extends State<AdminShopPage> {
                         final stockMatches = food.quantity
                             .toString()
                             .toLowerCase()
-                            .contains(_searchQuery); // Nova condição
-                        return nameMatches ||
-                            priceMatches ||
-                            stockMatches; // Inclui a nova condição
+                            .contains(_searchQuery);
+                        return nameMatches || priceMatches || stockMatches;
                       }).toList();
 
                   if (_sortByStock) {
@@ -277,11 +454,6 @@ class _AdminShopPageState extends State<AdminShopPage> {
                     });
                   }
 
-                  for (var item in snapshot.data!) {
-                    final food = item['food'] as Food;
-                    final id = item['id'];
-                    final referenceLevel = _referenceStockLevel[id] ?? 0;
-                  }
                   return ListView.builder(
                     itemCount: filteredFoods.length,
                     itemBuilder: (context, index) {
@@ -289,6 +461,8 @@ class _AdminShopPageState extends State<AdminShopPage> {
                       final id = filteredFoods[index]['id'];
                       final referenceLevel = _referenceStockLevel[id] ?? 0;
                       final isLowStock = food.quantity <= referenceLevel;
+                      final isCloseToExpire = _isCloseToExpire(food.expiryDate);
+
                       return Card(
                         color: Colors.white,
                         margin: const EdgeInsets.symmetric(
@@ -302,11 +476,20 @@ class _AdminShopPageState extends State<AdminShopPage> {
                             overflow: TextOverflow.ellipsis,
                           ),
                           subtitle: Text(
-                            'R\$ ${food.price} | Estoque: ${food.quantity}',
+                            'R\$ ${food.price} | Estoque: ${food.quantity}${food.expiryDate != null ? ' | Validade: ${DateFormat('dd/MM/yyyy').format(food.expiryDate!.toLocal())}' : ''}',
                           ),
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
+                              if (food.expiryDate != null)
+                                Icon(
+                                  Icons.calendar_today,
+                                  color:
+                                      isCloseToExpire
+                                          ? Colors.red
+                                          : Colors.amber,
+                                ),
+                              const SizedBox(width: 8),
                               IconButton(
                                 icon: Icon(Icons.notifications),
                                 color: isLowStock ? Colors.red : Colors.amber,
@@ -347,34 +530,86 @@ class _AdminShopPageState extends State<AdminShopPage> {
               },
             ),
           ),
+          Padding(
+            padding: const EdgeInsets.only(left: 25, right: 25, top: 10),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (context) => const AddFoodDialog(),
+                      ).then((newItem) {
+                        if (newItem != null) {
+                          _addNewFood(newItem);
+                        }
+                      });
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.amber,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.add, color: Colors.white),
+                        const Text(
+                          'Item',
+                          style: TextStyle(color: Colors.white, fontSize: 12),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(
+                  width: 8,
+                ), // Adicione algum espaço entre os botões
+                Expanded(
+                  // ou Flexible()
+                  child: ElevatedButton(
+                    onPressed: _generateStockPdfReport,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.amber,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Icon(Icons.picture_as_pdf, color: Colors.white),
+                        const Text(
+                          'Estoque',
+                          style: TextStyle(color: Colors.white, fontSize: 12),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  // ou Flexible()
+                  child: ElevatedButton(
+                    onPressed: () => _selectDateRange(context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.amber,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Icon(Icons.picture_as_pdf, color: Colors.white),
+                        const Text(
+                          'Vendas',
+                          style: TextStyle(color: Colors.white, fontSize: 12),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
           const Padding(
-            padding: EdgeInsets.only(top: 10, left: 25, right: 25),
+            padding: EdgeInsets.only(left: 25, right: 25),
             child: Divider(color: Colors.white),
-          ),
-        ],
-      ),
-      floatingActionButton: Column(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          FloatingActionButton(
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (context) => const AddFoodDialog(),
-              ).then((newItem) {
-                if (newItem != null) {
-                  _addNewFood(newItem);
-                }
-              });
-            },
-            backgroundColor: Colors.amber,
-            child: const Icon(Icons.add, color: Colors.white),
-          ),
-          const SizedBox(height: 16),
-          FloatingActionButton(
-            onPressed: _generatePdfReport, // Função a ser implementada
-            backgroundColor: Colors.amber,
-            child: const Icon(Icons.document_scanner, color: Colors.white),
           ),
         ],
       ),
@@ -574,9 +809,9 @@ class _AdminShopPageState extends State<AdminShopPage> {
                         children: <Widget>[
                           Text(
                             addedDate != null
-                                ? DateFormat('yyyy-MM-dd').format(
-                                  addedDate!.toLocal(),
-                                ) // Adicionada verificação de nulo (!)
+                                ? DateFormat(
+                                  'yyyy-MM-dd',
+                                ).format(addedDate!.toLocal())
                                 : 'Não selecionada',
                           ),
                           const Icon(Icons.calendar_today),
@@ -596,9 +831,9 @@ class _AdminShopPageState extends State<AdminShopPage> {
                         children: <Widget>[
                           Text(
                             expiryDate != null
-                                ? DateFormat('yyyy-MM-dd').format(
-                                  expiryDate!.toLocal(),
-                                ) // Adicionada verificação de nulo (!)
+                                ? DateFormat(
+                                  'yyyy-MM-dd',
+                                ).format(expiryDate!.toLocal())
                                 : 'Não selecionada',
                           ),
                           const Icon(Icons.calendar_today),
@@ -689,7 +924,7 @@ class _AdminShopPageState extends State<AdminShopPage> {
     String newDescription,
     String? newImagePath, {
     DateTime? addedDate,
-    DateTime? expiryDate, // Adicionar parâmetros opcionais para as datas
+    DateTime? expiryDate,
   }) async {
     try {
       final cart = Provider.of<Cart>(context, listen: false);
@@ -777,5 +1012,82 @@ class _AdminShopPageState extends State<AdminShopPage> {
             ],
           ),
     );
+  }
+
+  DateTime? _startDate;
+  DateTime? _endDate;
+
+  Future<void> _selectDateRange(BuildContext context) async {
+    final DateTime? pickedStartDate = await showDatePicker(
+      context: context,
+      initialDate:
+          _startDate ?? DateTime.now().subtract(const Duration(days: 30)),
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now(),
+      builder: (BuildContext context, Widget? child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: Colors.amber,
+              onPrimary: Colors.white,
+              secondary: Colors.amberAccent,
+              onSecondary: Colors.white,
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(foregroundColor: Colors.amber),
+            ),
+          ),
+          child: AlertDialog(
+            backgroundColor: Colors.white,
+            title: const Text('Selecione a Data de Início'),
+            content: SizedBox(width: 300, height: 400, child: child),
+          ),
+        );
+      },
+    );
+
+    if (pickedStartDate != null) {
+      setState(() {
+        _startDate = pickedStartDate;
+      });
+
+      final DateTime? pickedEndDate = await showDatePicker(
+        context: context,
+        initialDate: _endDate ?? pickedStartDate,
+        firstDate: pickedStartDate,
+        lastDate: DateTime.now(),
+        builder: (BuildContext context, Widget? child) {
+          return Theme(
+            data: Theme.of(context).copyWith(
+              colorScheme: ColorScheme.light(
+                primary: Colors.amber,
+                onPrimary: Colors.white,
+                secondary: Colors.amberAccent,
+                onSecondary: Colors.white,
+              ),
+              textButtonTheme: TextButtonThemeData(
+                style: TextButton.styleFrom(foregroundColor: Colors.amber),
+              ),
+            ),
+            child: AlertDialog(
+              backgroundColor: Colors.white,
+              title: const Text('Selecione a Data de Fim'),
+              content: SizedBox(width: 300, height: 400, child: child),
+            ),
+          );
+        },
+      );
+
+      if (pickedEndDate != null) {
+        setState(() {
+          _endDate = pickedEndDate;
+        });
+        _generateSalesPdfReport(_startDate!, _endDate!);
+      } else {
+        setState(() {
+          _startDate = null;
+        });
+      }
+    }
   }
 }

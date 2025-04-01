@@ -65,9 +65,9 @@ class AboutPage extends StatelessWidget {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.book_outlined,
-                          color: Colors.amber,
+                          color: Colors.amber[800],
                           size: 20,
                         ),
                         const SizedBox(width: 5),
@@ -76,7 +76,6 @@ class AboutPage extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 14,
                             color: Colors.amber[800],
-                            decoration: TextDecoration.underline,
                           ),
                         ),
                       ],
@@ -95,12 +94,12 @@ class AboutPage extends StatelessWidget {
                     ),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 8),
+
                   Text(
                     '1.0.0', // Defina aqui a versão atual do seu app
                     style: TextStyle(
                       fontSize: 18,
-                      fontWeight: FontWeight.w500,
+                      fontWeight: FontWeight.w400,
                       color: textColor,
                     ),
                     textAlign: TextAlign.center,

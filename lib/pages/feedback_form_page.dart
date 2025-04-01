@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/intl.dart';
+import 'package:timezone/timezone.dart' as tz;
+import 'package:timezone/data/latest.dart' as tz;
 
 class FeedbackFormPage extends StatefulWidget {
   const FeedbackFormPage({super.key});
@@ -12,8 +15,8 @@ class FeedbackFormPage extends StatefulWidget {
 class _FeedbackFormPageState extends State<FeedbackFormPage> {
   final TextEditingController _messageController = TextEditingController();
   final TextEditingController _feedbackImageLinkController =
-      TextEditingController(); // Novo controller para o link
-  String? _feedbackImageUrl; // Para armazenar o link da imagem
+      TextEditingController();
+  String? _feedbackImageUrl;
   bool _isLoading = false;
 
   void _addLinkToFeedback() {
@@ -88,6 +91,122 @@ class _FeedbackFormPageState extends State<FeedbackFormPage> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    tz.initializeTimeZones();
+  }
+
+  Widget _buildUserFeedbackList() {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      return const Center(child: Text('Usuário não autenticado.'));
+    }
+
+    return StreamBuilder<QuerySnapshot>(
+      stream:
+          FirebaseFirestore.instance
+              .collection('feedback')
+              .where('userId', isEqualTo: user.uid)
+              .orderBy('timestamp', descending: true)
+              .snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Center(
+            child: Text('Erro ao carregar seus feedbacks: ${snapshot.error}'),
+          );
+        }
+
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (snapshot.data!.docs.isEmpty) {
+          return const Center(
+            child: Text('Você ainda não enviou nenhum feedback.'),
+          );
+        }
+
+        return ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: snapshot.data!.docs.length,
+          itemBuilder: (context, index) {
+            final doc = snapshot.data!.docs[index];
+            final data = doc.data() as Map<String, dynamic>;
+            final message = data['message'] as String? ?? 'Sem mensagem';
+            final timestamp = data['timestamp'] as Timestamp?;
+            final imageUrls =
+                (data['imageUrls'] as List<dynamic>?)?.cast<String>() ?? [];
+
+            String formattedDate = '';
+            if (timestamp != null) {
+              final DateTime utcDateTime = timestamp.toDate();
+              // Defina o fuso horário do Brasil (pode precisar ajustar a string exata)
+              final brazilianTimeZone = tz.getLocation('America/Sao_Paulo');
+              // Converta a data/hora UTC para o fuso horário do Brasil
+              final brazilianDateTime = tz.TZDateTime.from(
+                utcDateTime,
+                brazilianTimeZone,
+              );
+              formattedDate = DateFormat(
+                'dd/MM/yyyy HH:mm',
+              ).format(brazilianDateTime);
+            }
+
+            return Card(
+              color: Colors.white,
+              margin: const EdgeInsets.symmetric(vertical: 8.0),
+              child: Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(message, style: const TextStyle(fontSize: 16.0)),
+                    if (imageUrls.isNotEmpty) ...[
+                      const SizedBox(height: 8.0),
+                      SizedBox(
+                        height: 100,
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: imageUrls.length,
+                          itemBuilder: (context, imageIndex) {
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 8.0),
+                              child: Image.network(
+                                imageUrls[imageIndex],
+                                fit: BoxFit.cover,
+                                width: 100,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return const SizedBox(
+                                    width: 100,
+                                    height: 100,
+                                    child: Center(
+                                      child: Text('Erro na imagem'),
+                                    ),
+                                  );
+                                },
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 8.0),
+                    Text(
+                      formattedDate,
+                      style: TextStyle(color: Colors.grey[600], fontSize: 12.0),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[200],
@@ -96,17 +215,22 @@ class _FeedbackFormPageState extends State<FeedbackFormPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            const Text(
+              'Enviar Feedback',
+              style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8.0),
             TextFormField(
               controller: _messageController,
               maxLines: 10,
               decoration: InputDecoration(
                 labelText: 'Sua Mensagem',
                 enabledBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.black38),
+                  borderSide: const BorderSide(color: Colors.black38),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.amber),
+                  borderSide: const BorderSide(color: Colors.amber),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 fillColor: Colors.white,
@@ -119,11 +243,11 @@ class _FeedbackFormPageState extends State<FeedbackFormPage> {
               decoration: InputDecoration(
                 labelText: 'Link da Imagem (Opcional)',
                 enabledBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.black38),
+                  borderSide: const BorderSide(color: Colors.black38),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.amber),
+                  borderSide: const BorderSide(color: Colors.amber),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 fillColor: Colors.white,
@@ -156,7 +280,6 @@ class _FeedbackFormPageState extends State<FeedbackFormPage> {
                       },
                     ),
                   ),
-
                   Center(
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
@@ -187,6 +310,13 @@ class _FeedbackFormPageState extends State<FeedbackFormPage> {
                         style: TextStyle(color: Colors.white),
                       ),
             ),
+            const SizedBox(height: 24.0),
+            const Text(
+              'Seus Feedbacks Enviados:',
+              style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8.0),
+            _buildUserFeedbackList(),
           ],
         ),
       ),

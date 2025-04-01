@@ -17,10 +17,28 @@ class _LoginPageState extends State<LoginPage> {
   final _passwordController = TextEditingController();
 
   Future signIn() async {
-    await FirebaseAuth.instance.signInWithEmailAndPassword(
-      email: _emailController.text.trim(),
-      password: _passwordController.text.trim(),
-    );
+    try {
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
+      );
+      // Se o login for bem-sucedido, você pode navegar para a próxima tela aqui
+    } on FirebaseAuthException catch (e) {
+      String errorMessage = 'Dados inválidos, tente novamente';
+      if (e.code == 'user-not-found') {
+        errorMessage = 'Usuário não encontrado com este e-mail.';
+      } else if (e.code == 'wrong-password') {
+        errorMessage = 'Senha incorreta para este usuário.';
+      } else if (e.code == 'invalid-email') {
+        errorMessage = 'O e-mail fornecido é inválido.';
+      }
+      // Exibe a mensagem de erro para o usuário
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(errorMessage)));
+      }
+    }
   }
 
   @override
@@ -41,7 +59,7 @@ class _LoginPageState extends State<LoginPage> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 // logo
-                Image.asset('lib/images/sv-logo.png', width: 300),
+                Image.asset('lib/images/sv-logo.png', width: 250),
 
                 SizedBox(height: 50),
 

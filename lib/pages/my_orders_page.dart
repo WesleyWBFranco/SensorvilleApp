@@ -19,6 +19,10 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
   List<Map<String, dynamic>> _pedidos = [];
   bool _isLoading = false;
   String _errorMessage = '';
+  bool _dataInicioSelecionada = false;
+  String? _selectedAdminUserId;
+  List<Map<String, dynamic>> _users = [];
+  bool _isAdmin = false;
 
   final DateFormat _formatter = DateFormat('dd/MM/yyyy HH:mm');
 
@@ -28,7 +32,73 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
     tzdata.initializeTimeZones();
     final now = DateTime.now();
     _dataInicio = DateTime(now.year, now.month, now.day, 0, 0, 0);
-    _carregarPedidos();
+    _checkAdminStatus();
+  }
+
+  Future<void> _checkAdminStatus() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      final userDoc =
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .get();
+      if (userDoc.exists && userDoc.data()?['role'] == 'admin') {
+        setState(() {
+          _isAdmin = true;
+        });
+        _loadUsers();
+      } else {
+        _carregarPedidos(); // Carrega os próprios pedidos se não for admin
+      }
+    }
+  }
+
+  Future<void> _loadUsers() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = '';
+      _users = [];
+    });
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = 'Usuário não logado.';
+      });
+      return;
+    }
+
+    try {
+      final QuerySnapshot<Map<String, dynamic>> snapshot =
+          await FirebaseFirestore.instance.collection('users').get();
+      setState(() {
+        _users =
+            snapshot.docs
+                .where(
+                  (doc) => doc.id != currentUser.uid,
+                ) // Filtra para excluir o usuário logado
+                .map(
+                  (doc) => {
+                    'uid': doc.id,
+                    'email': doc.data()['email'],
+                    'firstName': doc.data()['first name'],
+                    'lastName': doc.data()['last name'],
+                    'displayName':
+                        '${doc.data()['first name'] ?? ''} ${doc.data()['last name'] ?? ''}'
+                            .trim(),
+                  },
+                )
+                .toList();
+        _isLoading = false;
+        _carregarPedidos();
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Erro ao carregar usuários: $e';
+        _isLoading = false;
+      });
+    }
   }
 
   Future<void> _selecionarDataInicio(BuildContext context) async {
@@ -41,6 +111,8 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
     if (picked != null && picked != _dataInicio) {
       setState(() {
         _dataInicio = DateTime(picked.year, picked.month, picked.day, 0, 0, 0);
+        _dataInicioSelecionada = true;
+        _dataFim = null;
         _historicoCompleto = false;
         _carregarPedidos();
       });
@@ -48,10 +120,16 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
   }
 
   Future<void> _selecionarDataFim(BuildContext context) async {
+    if (!_dataInicioSelecionada) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Selecione a Data Inicial primeiro.')),
+      );
+      return;
+    }
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: _dataFim ?? _dataInicio ?? DateTime.now(),
-      firstDate: DateTime(2020),
+      firstDate: _dataInicio ?? DateTime(2020),
       lastDate: DateTime.now(),
     );
     if (picked != null && picked != _dataFim) {
@@ -72,6 +150,8 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
               ? null
               : DateTime(now.year, now.month, now.day, 0, 0, 0);
       _dataFim = null;
+      _dataInicioSelecionada = false;
+      _selectedAdminUserId = null;
       _carregarPedidos();
     });
   }
@@ -92,9 +172,14 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
       return;
     }
 
+    String userIdToQuery = user.uid;
+    if (_isAdmin && _selectedAdminUserId != null) {
+      userIdToQuery = _selectedAdminUserId!;
+    }
+
     Query<Map<String, dynamic>> pedidosQuery = FirebaseFirestore.instance
         .collection('pedidos')
-        .where('userId', isEqualTo: user.uid)
+        .where('userId', isEqualTo: userIdToQuery)
         .orderBy('data', descending: true);
 
     if (!_historicoCompleto) {
@@ -166,9 +251,64 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
             ),
             const SizedBox(height: 24),
             Text(
-              'Filtrar Compras',
+              'Filtrar Usuário',
               style: Theme.of(context).textTheme.titleMedium,
             ),
+            const SizedBox(height: 8),
+            if (_isAdmin)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 16.0),
+                child: Column(
+                  children: [
+                    DropdownButtonFormField<String>(
+                      decoration: const InputDecoration(
+                        labelText: 'Selecionar Usuário',
+                        labelStyle: TextStyle(
+                          color: Color.fromARGB(255, 98, 98, 98),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.white),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(
+                            color: Color.fromARGB(255, 110, 110, 110),
+                          ),
+                        ),
+                        fillColor: Colors.white,
+                        filled: true,
+                      ),
+                      dropdownColor: Colors.white,
+                      value: _selectedAdminUserId,
+                      items: [
+                        DropdownMenuItem(
+                          value: null,
+                          child: Text(
+                            'Ver meus pedidos',
+                            style: TextStyle(fontWeight: FontWeight.normal),
+                          ),
+                        ),
+                        ..._users.map(
+                          (user) => DropdownMenuItem<String>(
+                            value: user['uid'],
+                            child: Text(
+                              user['displayName'].isNotEmpty
+                                  ? user['displayName']
+                                  : user['email'] ?? 'Usuário sem nome',
+                              style: TextStyle(fontWeight: FontWeight.normal),
+                            ),
+                          ),
+                        ),
+                      ],
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          _selectedAdminUserId = newValue;
+                          _carregarPedidos();
+                        });
+                      },
+                    ),
+                  ],
+                ),
+              ),
             const SizedBox(height: 8),
             Row(
               children: [
@@ -193,18 +333,27 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
                 const SizedBox(width: 16),
                 Expanded(
                   child: InkWell(
-                    onTap: () => _selecionarDataFim(context),
+                    onTap:
+                        _dataInicioSelecionada
+                            ? () => _selecionarDataFim(context)
+                            : null,
                     child: InputDecorator(
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: 'Data Final (Opcional)',
-                        border: OutlineInputBorder(),
+                        border: const OutlineInputBorder(),
                         fillColor: Colors.white,
                         filled: true,
+                        labelStyle: TextStyle(
+                          color: _dataInicioSelecionada ? null : Colors.grey,
+                        ),
                       ),
                       child: Text(
                         _dataFim != null
                             ? _formatter.format(_dataFim!)
                             : 'Opcional',
+                        style: TextStyle(
+                          color: _dataInicioSelecionada ? null : Colors.grey,
+                        ),
                       ),
                     ),
                   ),

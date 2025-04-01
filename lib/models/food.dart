@@ -7,8 +7,8 @@ class Food {
   final String description;
   final int quantity;
   final String category;
-  final DateTime? addedDate; // 👈 Tornar nullable
-  final DateTime? expiryDate; // 👈 Tornar nullable
+  final DateTime? addedDate; 
+  final DateTime? expiryDate; 
   final bool isPromotional;
 
   Food({
@@ -18,10 +18,24 @@ class Food {
     required this.description,
     required this.quantity,
     required this.category,
-    this.addedDate, // 👈 Não mais 'required'
-    this.expiryDate, // 👈 Não mais 'required'
+    this.addedDate, 
+    this.expiryDate, 
     this.isPromotional = false,
   });
+
+  static Food fromJson(Map<String, dynamic> json) {
+    return Food(
+      name: json['name'] as String? ?? '', // Se for nulo, atribui uma string vazia como padrão
+      price: (json['price'] as num?)?.toDouble() ?? 0.0, // Se for nulo, atribui 0.0 como padrão
+      quantity: json['quantity'] as int? ?? 0, // Se for nulo, atribui 0 como padrão
+      imagePath: json['imagePath'] as String? ?? '', // Se for nulo, atribui uma string vazia como padrão
+      description: json['description'] as String? ?? '', // Se for nulo, atribui uma string vazia como padrão
+      category: json['category'] as String? ?? '', // Se for nulo, atribui uma string vazia como padrão
+      addedDate: (json['addedDate'] as Timestamp?)?.toDate(), // Pode ser nulo, pois addedDate? é DateTime?
+      expiryDate: (json['expiryDate'] as Timestamp?)?.toDate(), // Pode ser nulo, pois expiryDate? é DateTime?
+      isPromotional: json['isPromotional'] as bool? ?? false, // Se for nulo, atribui false como padrão
+    );
+  }
 
   Map<String, dynamic> toMap() {
     return {

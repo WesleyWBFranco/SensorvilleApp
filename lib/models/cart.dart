@@ -7,6 +7,10 @@ import 'food.dart';
 class Cart extends ChangeNotifier {
   final CollectionReference foodCollection = FirebaseFirestore.instance
       .collection('foods');
+  final CollectionReference _orderCollection = // Private collection reference
+      FirebaseFirestore.instance.collection('pedidos');
+
+  CollectionReference get orderCollection => _orderCollection; 
 
   List<Map<String, dynamic>> foodShop = [];
 
@@ -86,7 +90,6 @@ class Cart extends ChangeNotifier {
   }
 
   Future<void> addFood(Food food) async {
-    // 👈 Renomeado para addFood
 
     final docRef = await foodCollection.add(food.toMap());
 

@@ -63,7 +63,7 @@ class _ShopPageState extends State<ShopPage> {
                   },
                   decoration: InputDecoration(
                     hintText: 'Pesquisar por nome ou preço',
-                    hintStyle: TextStyle(color: Colors.grey[400]),
+                    hintStyle: TextStyle(color: Colors.grey[500]),
                     prefixIcon: const Icon(Icons.search, color: Colors.grey),
                     enabledBorder: OutlineInputBorder(
                       borderSide: BorderSide(
