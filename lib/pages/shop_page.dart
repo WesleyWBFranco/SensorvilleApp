@@ -32,7 +32,7 @@ class _ShopPageState extends State<ShopPage> {
     super.dispose();
   }
 
-  // add food to cart
+
   void addFoodToCart(Food food, String id) {
     Provider.of<Cart>(context, listen: false).addItemToCart(food, id);
     showDialog(
@@ -172,7 +172,6 @@ class _ShopPageState extends State<ShopPage> {
                           }).toList();
 
                       return Padding(
-                        // Adicione um Padding aqui para as margens laterais
                         padding: const EdgeInsets.symmetric(horizontal: 25.0),
                         child: GridView.builder(
                           itemCount: filteredFoods.length,
@@ -180,7 +179,7 @@ class _ShopPageState extends State<ShopPage> {
                               const SliverGridDelegateWithFixedCrossAxisCount(
                                 crossAxisCount: 2,
                                 childAspectRatio:
-                                    0.7, // Ajuste este valor se precisar mudar a proporção
+                                    0.7, 
                                 crossAxisSpacing: 25.0,
                                 mainAxisSpacing: 25.0,
                               ),

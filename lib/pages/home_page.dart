@@ -51,7 +51,7 @@ class _HomePageState extends State<HomePage> {
         if (data != null && data['role'] == 'admin') {
           setState(() {
             _isAdmin = true;
-            // Adiciona ou substitui AdminShopPage no índice 5
+            
             if (_pages.length > 5) {
               if (_pages[5] is! AdminShopPage) {
                 _pages[5] = const AdminShopPage();
@@ -59,7 +59,7 @@ class _HomePageState extends State<HomePage> {
             } else {
               _pages.add(const AdminShopPage());
             }
-            // Adiciona ou substitui FeedbackAdminPage no índice 6
+            
             if (_pages.length > 6) {
               if (_pages[6] is! FeedbackAdminPage) {
                 _pages[6] = const FeedbackAdminPage();
@@ -70,11 +70,11 @@ class _HomePageState extends State<HomePage> {
           });
         } else {
           _isAdmin = false;
-          // Remove AdminShopPage se existir no índice 5
+          
           if (_pages.length > 5 && _pages[5] is AdminShopPage) {
             _pages.removeAt(5);
           }
-          // Remove FeedbackAdminPage se existir no índice 6
+          
           if (_pages.length > 6 && _pages[6] is FeedbackAdminPage) {
             _pages.removeAt(6);
           }
@@ -113,7 +113,7 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final User? user =
-        FirebaseAuth.instance.currentUser; // Acesse currentUser aqui
+        FirebaseAuth.instance.currentUser;
 
     if (user != null) {
       return Scaffold(
@@ -121,12 +121,12 @@ class _HomePageState extends State<HomePage> {
         bottomNavigationBar:
             (_selectedIndex == 0 ||
                     _selectedIndex == 1 ||
-                    (_isAdmin && _selectedIndex == 5)) // Ajuste a condição aqui
+                    (_isAdmin && _selectedIndex == 5)) 
                 ? MyBottomNavBar(
                   onTabChange: (index) => navigateBottomBar(index),
                   isAdmin: _isAdmin,
                   selectedIndexFromParent:
-                      _selectedIndex, // Passa o _selectedIndex do HomePage
+                      _selectedIndex, 
                 )
                 : null,
         appBar: AppBar(
@@ -186,9 +186,9 @@ class _HomePageState extends State<HomePage> {
                       setState(() {
                         if (_isAdmin) {
                           _selectedIndex =
-                              _pages.length > 6 ? 6 : -1; // FeedbackAdminPage
+                              _pages.length > 6 ? 6 : -1; 
                         } else {
-                          _selectedIndex = 4; // FeedbackFormPage
+                          _selectedIndex = 4;
                         }
                       });
                     },
@@ -208,7 +208,6 @@ class _HomePageState extends State<HomePage> {
                 child: GestureDetector(
                   onTap: () {
                     FirebaseAuth.instance.signOut();
-                    // A reconstrução do widget ocorrerá aqui após o sign-out
                   },
                   child: const ListTile(
                     leading: Icon(Icons.logout, color: Colors.black),
@@ -231,7 +230,6 @@ class _HomePageState extends State<HomePage> {
         );
       });
       return const Scaffold(
-        // Adicionei const aqui
         body: Center(child: CircularProgressIndicator()),
       );
     }

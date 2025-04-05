@@ -96,7 +96,7 @@ class AboutPage extends StatelessWidget {
                   ),
 
                   Text(
-                    '1.0.0', // Defina aqui a versão atual do seu app
+                    '1.0.0', 
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w400,

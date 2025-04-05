@@ -49,7 +49,7 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
         });
         _loadUsers();
       } else {
-        _carregarPedidos(); // Carrega os próprios pedidos se não for admin
+        _carregarPedidos();
       }
     }
   }
@@ -77,7 +77,7 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
             snapshot.docs
                 .where(
                   (doc) => doc.id != currentUser.uid,
-                ) // Filtra para excluir o usuário logado
+                ) 
                 .map(
                   (doc) => {
                     'uid': doc.id,

@@ -12,7 +12,7 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
-  // text controllers
+
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
@@ -32,23 +32,23 @@ class _RegisterPageState extends State<RegisterPage> {
   Future signUp() async {
     if (passwordConfirmed()) {
       try {
-        // create user
+       
         UserCredential userCredential = await FirebaseAuth.instance
             .createUserWithEmailAndPassword(
           email: _emailController.text.trim(),
           password: _passwordController.text.trim(),
         );
 
-        // define user
+        
         String userRole = 'user';
 
-        // add user details
+     
         addUserDetails(
           _firstNameController.text.trim(),
           _lastNameController.text.trim(),
           _emailController.text.trim(),
           userRole,
-          userCredential.user!.uid, // Passa o UID para addUserDetails
+          userCredential.user!.uid, 
         );
       } catch (e) {
         print('Erro ao registrar usuário: $e');
@@ -85,7 +85,7 @@ class _RegisterPageState extends State<RegisterPage> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Sensorville App
+               
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -131,7 +131,6 @@ class _RegisterPageState extends State<RegisterPage> {
 
                 SizedBox(height: 10),
 
-                // register msg
                 Text(
                   'Registre-se com os seus dados!',
                   style: TextStyle(fontSize: 24),
@@ -139,7 +138,6 @@ class _RegisterPageState extends State<RegisterPage> {
 
                 SizedBox(height: 50),
 
-                // first name textfield
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 25.0),
                   child: TextField(
@@ -162,7 +160,6 @@ class _RegisterPageState extends State<RegisterPage> {
 
                 SizedBox(height: 10),
 
-                // last name textfield
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 25.0),
                   child: TextField(
@@ -185,7 +182,6 @@ class _RegisterPageState extends State<RegisterPage> {
 
                 SizedBox(height: 10),
 
-                // email textfield
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 25.0),
                   child: TextField(
@@ -208,7 +204,6 @@ class _RegisterPageState extends State<RegisterPage> {
 
                 SizedBox(height: 10),
 
-                // password textfield
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 25.0),
                   child: TextField(
@@ -232,7 +227,6 @@ class _RegisterPageState extends State<RegisterPage> {
 
                 SizedBox(height: 10),
 
-                // confirm password textfield
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 25.0),
                   child: TextField(
@@ -256,7 +250,6 @@ class _RegisterPageState extends State<RegisterPage> {
 
                 SizedBox(height: 10),
 
-                // sign in button
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 25.0),
                   child: GestureDetector(
@@ -283,7 +276,6 @@ class _RegisterPageState extends State<RegisterPage> {
 
                 SizedBox(height: 20),
 
-                // not a member? register now
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [

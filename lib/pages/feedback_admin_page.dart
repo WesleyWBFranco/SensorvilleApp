@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
-import '../models/feedback.dart'; // Importe o modelo de dados
+import '../models/feedback.dart'; 
 
 class FeedbackAdminPage extends StatefulWidget {
   const FeedbackAdminPage({super.key});
@@ -19,7 +19,7 @@ class _FeedbackAdminPageState extends State<FeedbackAdminPage> {
           .collection('feedback')
           .doc(feedbackId)
           .update({'status': 'read'});
-      setState(() {}); // Atualiza a tela
+      setState(() {}); 
     } catch (e) {
       print('Erro ao marcar como lido: $e');
     }
@@ -31,7 +31,7 @@ class _FeedbackAdminPageState extends State<FeedbackAdminPage> {
           .collection('feedback')
           .doc(feedbackId)
           .update({'status': 'unread'});
-      setState(() {}); // Atualiza a tela
+      setState(() {}); 
     } catch (e) {
       print('Erro ao marcar como não lido: $e');
     }
@@ -68,14 +68,13 @@ class _FeedbackAdminPageState extends State<FeedbackAdminPage> {
                   )
                   .toList();
 
-          // Ordena os feedbacks: primeiro por status (unread antes de read), depois por timestamp
+        
           feedbacks.sort((a, b) {
             if (a.status == 'unread' && b.status == 'read') {
-              return -1; // a vem antes de b
+              return -1; 
             } else if (a.status == 'read' && b.status == 'unread') {
-              return 1; // b vem antes de a
+              return 1; 
             } else {
-              // Se os status são iguais, ordena por timestamp (mais antigo primeiro)
               return a.timestamp.compareTo(b.timestamp);
             }
           });

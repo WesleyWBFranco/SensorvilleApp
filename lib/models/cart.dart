@@ -7,7 +7,7 @@ import 'food.dart';
 class Cart extends ChangeNotifier {
   final CollectionReference foodCollection = FirebaseFirestore.instance
       .collection('foods');
-  final CollectionReference _orderCollection = // Private collection reference
+  final CollectionReference _orderCollection = 
       FirebaseFirestore.instance.collection('pedidos');
 
   CollectionReference get orderCollection => _orderCollection; 

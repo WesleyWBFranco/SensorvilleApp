@@ -25,15 +25,15 @@ class Food {
 
   static Food fromJson(Map<String, dynamic> json) {
     return Food(
-      name: json['name'] as String? ?? '', // Se for nulo, atribui uma string vazia como padrão
-      price: (json['price'] as num?)?.toDouble() ?? 0.0, // Se for nulo, atribui 0.0 como padrão
-      quantity: json['quantity'] as int? ?? 0, // Se for nulo, atribui 0 como padrão
-      imagePath: json['imagePath'] as String? ?? '', // Se for nulo, atribui uma string vazia como padrão
-      description: json['description'] as String? ?? '', // Se for nulo, atribui uma string vazia como padrão
-      category: json['category'] as String? ?? '', // Se for nulo, atribui uma string vazia como padrão
-      addedDate: (json['addedDate'] as Timestamp?)?.toDate(), // Pode ser nulo, pois addedDate? é DateTime?
-      expiryDate: (json['expiryDate'] as Timestamp?)?.toDate(), // Pode ser nulo, pois expiryDate? é DateTime?
-      isPromotional: json['isPromotional'] as bool? ?? false, // Se for nulo, atribui false como padrão
+      name: json['name'] as String? ?? '', 
+      price: (json['price'] as num?)?.toDouble() ?? 0.0, 
+      quantity: json['quantity'] as int? ?? 0, 
+      imagePath: json['imagePath'] as String? ?? '', 
+      description: json['description'] as String? ?? '', 
+      category: json['category'] as String? ?? '', 
+      addedDate: (json['addedDate'] as Timestamp?)?.toDate(), 
+      expiryDate: (json['expiryDate'] as Timestamp?)?.toDate(), 
+      isPromotional: json['isPromotional'] as bool? ?? false, 
     );
   }
 
@@ -45,8 +45,8 @@ class Food {
       'description': description,
       'quantity': quantity,
       'category': category,
-      'addedDate': addedDate != null ? Timestamp.fromDate(addedDate!) : null, // 👈 Lidar com null
-      'expiryDate': expiryDate != null ? Timestamp.fromDate(expiryDate!) : null, // 👈 Lidar com null
+      'addedDate': addedDate != null ? Timestamp.fromDate(addedDate!) : null, 
+      'expiryDate': expiryDate != null ? Timestamp.fromDate(expiryDate!) : null, 
       'isPromotional': isPromotional,
     };
   }
@@ -59,8 +59,8 @@ class Food {
       description: map['description'],
       quantity: map['quantity'],
       category: map['category'],
-      addedDate: map['addedDate'] != null ? (map['addedDate'] as Timestamp).toDate() : null, // 👈 Lidar com null
-      expiryDate: map['expiryDate'] != null ? (map['expiryDate'] as Timestamp).toDate() : null, // 👈 Lidar com null
+      addedDate: map['addedDate'] != null ? (map['addedDate'] as Timestamp).toDate() : null,
+      expiryDate: map['expiryDate'] != null ? (map['expiryDate'] as Timestamp).toDate() : null, 
       isPromotional: map['isPromotional'] ?? false,
     );
   }

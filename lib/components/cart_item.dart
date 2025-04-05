@@ -10,7 +10,7 @@ class CartItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final food = item['food'] as dynamic;
-    final id = item['id'] as String; // Pega o ID do item
+    final id = item['id'] as String; 
 
     return Container(
       decoration: BoxDecoration(
@@ -21,10 +21,10 @@ class CartItem extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(
           8.0,
-        ), // Adiciona um pequeno padding interno
+        ), 
         child: Row(
           children: [
-            // Imagem com tamanho fixo
+          
             Container(
               width: 70.0,
               height: 70.0,
@@ -62,7 +62,7 @@ class CartItem extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Título em uma linha
+                  
                   Text(
                     food.name,
                     style: const TextStyle(
@@ -81,7 +81,7 @@ class CartItem extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8.0),
-            // Controles de quantidade
+           
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [

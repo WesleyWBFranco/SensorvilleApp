@@ -42,8 +42,8 @@ class _AdminShopPageState extends State<AdminShopPage> {
       if (data != null && data.containsKey('referenceStockLevel')) {
         levels[doc.id] = data['referenceStockLevel'] as int? ?? 0;
       } else {
-        levels[doc.id] = 0; // Define o valor padrão como 0 se não existir
-        // Atualizar o documento no Firestore com o valor padrão
+        levels[doc.id] = 0; 
+      
         Provider.of<Cart>(
           context,
           listen: false,
@@ -264,7 +264,7 @@ class _AdminShopPageState extends State<AdminShopPage> {
     final startTimestamp = Timestamp.fromDate(startDate);
     final endTimestamp = Timestamp.fromDate(
       endDate.add(const Duration(days: 1)).subtract(const Duration(seconds: 1)),
-    ); // Inclui o dia final até o último segundo
+    ); 
 
     final ordersSnapshot =
         await Provider.of<Cart>(context, listen: false).orderCollection
@@ -564,9 +564,9 @@ class _AdminShopPageState extends State<AdminShopPage> {
                 ),
                 const SizedBox(
                   width: 8,
-                ), // Adicione algum espaço entre os botões
+                ), 
                 Expanded(
-                  // ou Flexible()
+                
                   child: ElevatedButton(
                     onPressed: _generateStockPdfReport,
                     style: ElevatedButton.styleFrom(
@@ -586,7 +586,7 @@ class _AdminShopPageState extends State<AdminShopPage> {
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  // ou Flexible()
+                  
                   child: ElevatedButton(
                     onPressed: () => _selectDateRange(context),
                     style: ElevatedButton.styleFrom(

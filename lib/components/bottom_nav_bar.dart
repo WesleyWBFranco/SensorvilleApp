@@ -4,7 +4,7 @@ import 'package:google_nav_bar/google_nav_bar.dart';
 class MyBottomNavBar extends StatefulWidget {
   final void Function(int)? onTabChange;
   final bool isAdmin;
-  final int selectedIndexFromParent; // Renomeei para clareza
+  final int selectedIndexFromParent; 
 
   const MyBottomNavBar({
     Key? key,
@@ -37,14 +37,14 @@ class _MyBottomNavBarState extends State<MyBottomNavBar> {
   void _updateCurrentIndex(int parentIndex) {
     if (widget.isAdmin) {
       if (parentIndex == 5) {
-        // Assumindo que AdminShopPage está no índice 5
+     
         _currentIndex = 2; // Índice de "Gerenciar" no GNav para admin
       } else if (parentIndex == 0) {
         _currentIndex = 0; // Vendinha
       } else if (parentIndex == 1) {
         _currentIndex = 1; // Carrinho
       } else {
-        _currentIndex = -1; // Ou algum outro valor padrão se não corresponder
+        _currentIndex = -1; 
       }
     } else {
       if (parentIndex == 0) {
@@ -58,14 +58,14 @@ class _MyBottomNavBarState extends State<MyBottomNavBar> {
       } else if (parentIndex == 4) {
         _currentIndex = 4; // Sugestões
       } else {
-        _currentIndex = -1; // Ou algum outro valor padrão se não corresponder
+        _currentIndex = -1; 
       }
     }
 
-    // Garante que _currentIndex esteja dentro dos limites dos tabs visíveis
+    
     if (_currentIndex >= (widget.isAdmin ? 3 : 2)) {
       _currentIndex =
-          -1; // Ou ajuste para o último índice visível, dependendo do desejado
+          -1; 
     }
   }
 
@@ -75,7 +75,7 @@ class _MyBottomNavBarState extends State<MyBottomNavBar> {
       padding: const EdgeInsets.symmetric(vertical: 20),
       child: GNav(
         selectedIndex:
-            _currentIndex, // Directly use _currentIndex (which should be a valid index or a value handled by your logic)
+            _currentIndex, 
         color: Colors.amber[200],
         activeColor: Colors.amber.shade700,
         tabActiveBorder: Border.all(color: Colors.white),
@@ -87,7 +87,7 @@ class _MyBottomNavBarState extends State<MyBottomNavBar> {
           setState(() {
             _currentIndex = value;
           });
-          // Here we translate the BottomNavBar index back to the HomePage index
+          
           int translatedIndex = value;
           if (widget.isAdmin) {
             if (value == 2) {

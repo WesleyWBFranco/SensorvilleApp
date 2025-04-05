@@ -12,7 +12,7 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  // text controllers
+
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
@@ -22,7 +22,7 @@ class _LoginPageState extends State<LoginPage> {
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
-      // Se o login for bem-sucedido, você pode navegar para a próxima tela aqui
+  
     } on FirebaseAuthException catch (e) {
       String errorMessage = 'Dados inválidos, tente novamente';
       if (e.code == 'user-not-found') {
@@ -32,7 +32,7 @@ class _LoginPageState extends State<LoginPage> {
       } else if (e.code == 'invalid-email') {
         errorMessage = 'O e-mail fornecido é inválido.';
       }
-      // Exibe a mensagem de erro para o usuário
+
       if (context.mounted) {
         ScaffoldMessenger.of(
           context,
@@ -58,12 +58,12 @@ class _LoginPageState extends State<LoginPage> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // logo
+              
                 Image.asset('lib/images/sv-logo.png', width: 250),
 
                 SizedBox(height: 50),
 
-                // Sensorville App
+             
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -109,7 +109,7 @@ class _LoginPageState extends State<LoginPage> {
 
                 SizedBox(height: 50),
 
-                // email textfield
+                
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 25.0),
                   child: TextField(
@@ -132,7 +132,7 @@ class _LoginPageState extends State<LoginPage> {
 
                 SizedBox(height: 10),
 
-                // password textfield
+              
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 25.0),
                   child: TextField(
@@ -186,7 +186,7 @@ class _LoginPageState extends State<LoginPage> {
 
                 SizedBox(height: 10),
 
-                // sign in button
+            
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 25.0),
                   child: GestureDetector(
@@ -213,7 +213,7 @@ class _LoginPageState extends State<LoginPage> {
 
                 SizedBox(height: 20),
 
-                // not a member? register now
+             
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
